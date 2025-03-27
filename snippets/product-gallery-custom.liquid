@@ -1,0 +1,290 @@
+{% assign logo_viewing = account_meta.logo_viewing.value  %}
+<div class="main custom-product-images-wrapper media-gallery__slider">
+  <div class="slider custom-product-slideshow">
+   {% if logo_viewing == "Logo Mockup" %}
+    {% for image_variant in product.variants %} 
+      {% assign media = image_variant.featured_media %}
+      {%- assign media_variant = image_variant -%}   
+      {% assign variant_image_id  = media.id | append: "," %} 
+
+      {% liquid  
+        if image_variant.metafields.logo.data.value != blank
+          assign logo_product_option = image_variant.metafields.logo.data.value
+        else 
+          assign logo_product_option = product.metafields.logo.data.value 
+        endif
+              
+        if logo_product_option != blank
+         for logo_data in logo_product_option 
+            assign canvas_logo_placement = logo_data.canvas.value | split: "_"
+            assign default_placement = logo_data.default_placement.value | split: "_"  
+            assign location = logo_data.location | replace: " ", "_"    
+            assign svg_thread_instructions = logo_data.svg_thread_instructions.value 
+            if media == blank
+              assign media = logo_data.picture
+            endif  
+            break
+          endfor
+        endif
+      %}
+
+      {% unless main_image_variant_arr contains variant_image_id %}
+        {% assign main_image_variant_arr = variant_image_id | append: main_image_variant_arr %}
+         <div class="product__main-photos_custom">
+            {%- render 'product-image-element',
+              img: media,
+              type: 'photoswipe', ,
+              isPersonalize: false,  
+              canvas_logo_placement:canvas_logo_placement,
+              default_placement:default_placement,
+              svg_thread_instructions:svg_thread_instructions,
+              alt: media.alt | escape | split: '#' | first,
+              widths: '360, 540, 720, 900, 1080',  
+              media: media, 
+              sizes: sizes,
+              sizeVariable: sizeVariable, 
+              loading: current_slide_loading,
+              media_variant: media_variant,
+              account_meta:account_meta
+            -%} 
+        </div> 
+        {% endunless %}
+    {% endfor %}
+   {% elsif logo_viewing == "Logo Location" %}
+    {% assign displayed_images = "" %} <!-- Store displayed images -->
+
+      {% if logo_product_option != blank %}
+          {% for logo_data in logo_product_option %}
+              {%- liquid
+                  assign canvas_logo_placement = logo_data.canvas.value | split: "_"
+                  assign default_placement = logo_data.default_placement.value | split: "_"  
+                  assign location = logo_data.location | replace: " ", "_"  
+                  assign picture = logo_data.picture
+                  assign svg_thread_instructions = logo_data.svg_thread_instructions.value
+              -%}
+              
+              {% if picture == blank %}
+                  {% assign picture = current_variant.featured_media %}
+              {% endif %}
+              
+              {% assign media_id = picture.value.id %}
+              
+                  {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+                  <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+                      {%- render 'product-image-element',
+                          section_id: section.id, 
+                          img: picture,
+                          type: 'photoswipe',
+                          location: location,
+                          canvas_logo_placement: canvas_logo_placement,
+                          default_placement: default_placement,
+                          svg_thread_instructions: svg_thread_instructions,
+                          media_variant: current_variant,
+                          isPersonalize: false,  
+                          loopIndex0: forloop.index0,
+                          loopIndex: forloop.index,  
+                          account_meta: account_meta
+                      -%}
+                  </div>  
+              
+          {% endfor %}
+      {% else %}
+        {% assign media_id = current_variant.featured_media.id %}
+          {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+          <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+              {%- render 'product-image-element',
+                  section_id: section.id, 
+                  img: current_variant.featured_media,
+                  type: 'photoswipe',
+                  location: location,
+                  canvas_logo_placement: canvas_logo_placement,
+                  default_placement: default_placement,
+                  svg_thread_instructions: svg_thread_instructions,
+                  media_variant: current_variant,
+                  isPersonalize: false,  
+                  loopIndex0: forloop.index0,
+                  loopIndex: forloop.index,  
+                  account_meta: account_meta
+              -%}
+          </div>  
+      {% endif %}
+      {% for media in product.media %}
+          {% assign media_id = media.id %}
+          {% unless displayed_images contains media_id %}
+              {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+              <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+                  {%- render 'product-image-element',
+                      section_id: section.id, 
+                      img: media,
+                      type: 'photoswipe',              
+                      isPersonalize: false,  
+                      loopIndex0: forloop.index0,
+                      loopIndex: forloop.index,  
+                      account_meta: account_meta
+                  -%}
+              </div>  
+          {% endunless %}
+      {% endfor %}
+    {% else %}
+      {% for media in product.media %}
+         <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media.id }}">
+            {%- render 'product-image-element',
+              section_id: section.id, 
+              img: media,
+              type: 'photoswipe',             
+              isPersonalize: false,  
+              loopIndex0: forloop.index0,
+              loopIndex: forloop.index,  
+              account_meta:account_meta
+            -%}
+        </div>  
+      {% endfor %}
+  {% endif %}
+  </div>
+  
+  <div class="slider product_custom_thumbs_scroller">
+    {% if logo_viewing == "Logo Mockup" %}
+      {% for image_variant in product.variants %} 
+        {% assign media = image_variant.featured_media %}
+        {%- assign media_variant_1 = image_variant -%}   
+        {% assign variant_image_id_1  = media.id | append: "," %}
+        
+        {% liquid  
+          if image_variant.metafields.logo.data.value != blank
+            assign logo_product_option = image_variant.metafields.logo.data.value
+          else 
+            assign logo_product_option = product.metafields.logo.data.value 
+          endif
+                
+          if logo_product_option != blank
+           for logo_data in logo_product_option 
+              assign canvas_logo_placement = logo_data.canvas.value | split: "_"
+              assign default_placement = logo_data.default_placement.value | split: "_"  
+              assign location = logo_data.location | replace: " ", "_"    
+              assign svg_thread_instructions = logo_data.svg_thread_instructions.value 
+              if media == blank
+                assign media = logo_data.picture
+              endif  
+              break
+            endfor
+          endif
+        %}
+      
+        {% unless main_image_variant_arrs contains variant_image_id_1 %}
+          {% assign main_image_variant_arrs = variant_image_id_1 | append: main_image_variant_arrs %}
+           <div class="product__thumb-item " data-index-id="{{ media.id }}">
+             {%- render 'product-image-element',
+              img: media,
+              type: 'photoswipe', ,
+              isPersonalize: false,
+              canvas_logo_placement:canvas_logo_placement,
+              default_placement:default_placement,
+              svg_thread_instructions:svg_thread_instructions,
+              alt: media.alt | escape | split: '#' | first,
+              widths: '360, 540, 720, 900, 1080',  
+              media: media, 
+              sizes: sizes,
+              sizeVariable: sizeVariable, 
+              loading: current_slide_loading,
+              media_variant: media_variant_1,
+              account_meta:account_meta
+            -%}
+          </div> 
+          {% endunless %}
+      {% endfor %}
+  {% elsif logo_viewing == "Logo Location" %}
+      {% assign displayed_images = "" %} <!-- Store displayed images -->
+  
+      {% if logo_product_option != blank %}
+          {% for logo_data in logo_product_option %}
+              {%- liquid
+                  assign canvas_logo_placement = logo_data.canvas.value | split: "_"
+                  assign default_placement = logo_data.default_placement.value | split: "_"  
+                  assign location = logo_data.location | replace: " ", "_"  
+                  assign picture = logo_data.picture 
+                  assign svg_thread_instructions = logo_data.svg_thread_instructions.value
+              -%}
+              
+              {% if picture == blank %}
+                  {% assign picture = current_variant.featured_media %}
+              {% endif %}
+              
+              {% assign media_id = picture.value.id %}
+              
+              {% unless displayed_images contains media_id %}  <!-- Prevent duplicate images -->
+                  {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+                  <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+                      {%- render 'product-image-element',
+                          section_id: section.id, 
+                          img: picture,
+                          type: 'photoswipe',
+                          location: location,
+                          canvas_logo_placement: canvas_logo_placement,
+                          default_placement: default_placement,
+                          svg_thread_instructions: svg_thread_instructions,
+                          media_variant: current_variant,
+                          isPersonalize: false,  
+                          loopIndex0: forloop.index0,
+                          loopIndex: forloop.index,  
+                          account_meta: account_meta
+                      -%}
+                  </div>  
+              {% endunless %}
+          {% endfor %}
+      {% else %}
+      
+      {% assign media_id = current_variant.featured_media.id %}
+      {% unless displayed_images contains media_id %}  <!-- Prevent duplicate images -->
+          {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+          <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+              {%- render 'product-image-element',
+                  section_id: section.id, 
+                  img: current_variant.featured_media,
+                  type: 'photoswipe',
+                  location: location,
+                  canvas_logo_placement: canvas_logo_placement,
+                  default_placement: default_placement,
+                  svg_thread_instructions: svg_thread_instructions,
+                  media_variant: current_variant,
+                  isPersonalize: false,  
+                  loopIndex0: forloop.index0,
+                  loopIndex: forloop.index,  
+                  account_meta: account_meta
+              -%}
+          </div>  
+      {% endunless %}
+      {% endif %}
+      {% for media in product.media %}
+          {% assign media_id = media.id %}
+          {% unless displayed_images contains media_id %}  <!-- Prevent duplicate images -->
+              {% assign displayed_images = displayed_images | append: media_id | append: "," %}
+              <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media_id }}">
+                  {%- render 'product-image-element',
+                      section_id: section.id, 
+                      img: media,
+                      type: 'photoswipe',              
+                      isPersonalize: false,  
+                      loopIndex0: forloop.index0,
+                      loopIndex: forloop.index,  
+                      account_meta: account_meta
+                  -%}
+              </div>  
+          {% endunless %}
+      {% endfor %}
+  {% else %}
+      {% for media in product.media %}
+         <div class="product__thumb-item product__main-photos_{{ location }} product__main-photos_common" data-index-id="{{ media.id }}">
+            {%- render 'product-image-element',
+              section_id: section.id, 
+              img: media,
+              type: 'photoswipe',             
+              isPersonalize: false,  
+              loopIndex0: forloop.index0,
+              loopIndex: forloop.index,  
+              account_meta:account_meta
+            -%}
+        </div>  
+      {% endfor %}
+  {% endif %} 
+  </div>
+</div>

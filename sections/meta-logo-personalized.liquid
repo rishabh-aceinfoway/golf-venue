@@ -1,0 +1,579 @@
+{% include 'activeAccount' %}
+{{ 'meta-logo-style.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign thread_colors = shop.metaobjects.thread_colors.values
+  assign logo_viewing = account_meta.logo_viewing.value
+  assign logo_editing = account_meta.logo_editing.value
+  assign personalization_editing = account_meta.personalization_options.value
+  assign course_code = account_meta.course_code.value
+  assign customer_logo_type = account_meta.logo_type.value
+  assign logos = account_meta.logos.value
+  assign logosArr = account_meta.logos.value | join : ','
+  assign personalization_logo_mockup = account_meta.personalization_logo_mockup.value | default: false
+  assign personalization_notes = account_meta.personalization_notes.value | default: false
+  assign personalization_use_assigned_thread = account_meta.personalization_use_assigned_thread.value | default: false
+  
+   assign current_variant = product.selected_or_first_available_variant
+   if current_variant.metafields.logo.data.value != blank
+    assign logo_product_option = current_variant.metafields.logo.data.value
+   else 
+    assign logo_product_option = product.metafields.logo.data.value 
+   endif
+
+   assign is_mockup_enabled = false
+   if logo_viewing == "Logo Location" 
+      assign is_mockup_enabled = true
+     if personalization_logo_mockup
+       unless logosArr contains "ONLYPERSONALIZATION"
+         assign logosappend = logosArr | append : ",ONLYPERSONALIZATION"
+         assign logos = logosappend | split : ','
+       endunless
+     endif
+   elsif logo_viewing == "Logo Mockup" and personalization_logo_mockup
+     assign is_mockup_enabled = true
+     assign logos = "" | append : "ONLYPERSONALIZATION"
+   endif
+-%}
+ 
+<div class="section_custom_meta_logo_personalized" >
+<input type="hidden" id="collection_product_url" value="{{ product.url | within: collection }}" >
+  
+{% if is_mockup_enabled %}
+  {%- capture contentForQuerystring -%}{{ content_for_header }}{%- endcapture -%}
+  {%- assign pageUrl = contentForQuerystring
+    | split: '"pageurl":"'
+    | last
+    | split: '"'
+    | first
+    | split: '.myshopify.com'
+    | last
+    | replace: '\/', '/'
+    | replace: '%20', ' '
+    | replace: '\u0026', '&'
+  -%}
+  {% capture finalurl %}https://{{ pageUrl }}{% endcapture %}
+  {%- liquid
+    assign query_string = finalurl | split: '?' | last
+    assign splitText = query_string | split: '&'
+    assign keyArr = ''
+    assign valArr = ''
+    assign viewType = ''
+    for obj in splitText
+      assign key = obj | split: '=' | first
+      assign value = obj | split: '=' | last
+      assign keyArr = keyArr | append: ',' | append: key
+      assign valArr = valArr | append: ',' | append: value
+    endfor
+  
+    assign keyArr = keyArr | remove_first: ',' | split: ','
+    assign valArr = valArr | remove_first: ',' | split: ','
+  
+    for obj in splitText
+      if keyArr[forloop.index0] == 'viewType'
+        assign viewType = valArr[forloop.index0]
+      endif
+     if keyArr[forloop.index0] == 'courseCode'
+        assign course_code = valArr[forloop.index0]
+      endif
+     if keyArr[forloop.index0] == 'customerLogos'
+        assign logos = valArr[forloop.index0] | split: "__"
+      endif
+    endfor
+  -%}
+   
+  {% if logo_product_option != blank %}
+    <div id="{% if viewType!=blank %}cart_variant_wrapper_custom_div{% else %}variant_wrapper_custom_div{% endif %}" style="{% if viewType==blank %} display:none; {% endif %}  text-align: center;" >
+      <div class="variant-wrapper-custom" data-type="dropdown" >
+        <label class="variant__label" for="MultipleOptionSelector-{{ section_id }}-{{ product.id }}-option-{{ forloop.index0 }}">
+          Add Logos
+        </label>
+        <div class="variant-input-wrap-custom" >
+          <div class="checkbox-dropdown">
+            <a class="dropdown-button" type="button" >Select Options
+              <svg width="30px" height="30px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#000000">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier"> 
+                  <rect x="0" fill="none" width="24" height="24"></rect> 
+                  <g> <path d="M7 10l5 5 5-5"></path> </g> 
+                </g>
+              </svg>
+            </a>
+            <div class="dropdown-menu">
+              {%- for logo_data in logo_product_option -%}
+                {% assign location = logo_data.location | replace: " ", "_"  %} 
+                <label>
+                  <input 
+                    type="checkbox" 
+                    class="checkbox meta-variant-dropdown" 
+                    value="{{ location }}" 
+                    name="properties[Location {{ forloop.index }}]"
+                    data-name="name"
+                    form="{{ form_id }}"
+                    data-location="{{ location }}"
+                    data-logo-section-id="LogoSection-{{ location }}-logos"
+                    {% if forloop.index == 1 %} checked {% endif %}
+                  > {{ logo_data.location }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+  
+{% if logo_viewing == "Logo Location" %}
+  {% if logo_product_option != blank %}
+    <div class="meta_logo_custom_section {% if section.settings.meta_logo_view == "Grid" %} meta-logo-grid-style {% endif %}">
+      {%- for logo_data in logo_product_option -%}
+        {%- liquid
+          assign canvas_logo_placement = logo_data.canvas.value
+          assign canvas_logo_placement_split = logo_data.canvas.value | split: '_'
+          assign default_placement = logo_data.default_placement.value
+          assign default_placement_split = logo_data.default_placement.value | split: '_'
+          assign location = logo_data.location | replace: ' ', '_'
+          assign name = logo_data.name
+          assign picture = logo_data.picture
+          assign product = logo_data.product
+          assign svg_instructions = logo_data.svg_instructions.value
+          assign svg_thread_instructions = logo_data.svg_thread_instructions.value | sort: "id"
+          assign logo_data_forloop_index = forloop
+          assign section_id = section.id
+        -%}
+          {% if picture == blank %}
+            {% assign picture = product.selected_or_first_available_variant.featured_media %}
+          {% endif %}
+        <div
+          class="index-section meta_logo_custom_index_section_{{ location }} {% if logo_data_forloop_index.index != 1 %} hide {% endif %} "
+          id="meta_logo_custom_index_section_{{ location }}"
+        >
+          <div class="page-width">
+            <div class="custom-content meta_logo_custom_section_{{ location }}">
+              <div class="custom__item small--one-whole one-half align--center">
+                <div class="custom__item-inner custom__item-inner--image custom__item-inner--placeholder-image">
+                  <div class="aos-animate">
+                    <div
+                      class="product__main-photos_{{ location }} ImageSection-{{ location }}-logos"
+                      id="ImageSection-{{ location }}-logos"
+                      {% if logo_data_forloop_index.index != 1 %}
+                        style="display:none;"
+                      {% endif %}
+                    >
+                      {% assign full_image_class = 'full_image_' | append: location %}
+                      {%-
+                        render 'product-image-element',
+                        img: picture,
+                        type: 'photoswipe',
+                        classes: '',
+                        canvas_logo_placement:canvas_logo_placement,
+                        default_placement:default_placement_split,
+                        isPersonalize: false,
+                        alt: picture.alt | escape | split: '#' | first,
+                        widths: '360, 540, 720, 900, 1080',
+                        full_image_class: full_image_class,
+                        product_zoom_size: '',
+                        loopIndex: loopIndex,
+                        media: picture,
+                        media_width: '2048',
+                        media_height: '2048',
+                        sizes: '',
+                        sizeVariable: '',
+                        fallback: fallback,
+                        loading: false,
+                        svg_instructions:svg_instructions,
+                        svg_thread_instructions:svg_thread_instructions,
+                        media_variant: current_variant,
+                        account_meta:account_meta,
+                      -%}
+                    </div>
+                  </div>
+                </div>
+                <div class="custom__item-inner custom__item-inner--liquid ">
+                  <div class="rte">
+                    {%- if logos != blank -%}
+                      {%- if logos and logos.size > 0 -%}
+                        {%- render 'meta-logo-selector',
+                          course_code: course_code,
+                          svg_instructions: svg_instructions,
+                          svg_thread_instructions: svg_thread_instructions,
+                          logos: logos,
+                          location: location,
+                          current_variant: current_variant,
+                          product: product,
+                          logo_data_forloop_index: logo_data_forloop_index.index,
+                          section_id: section_id,
+                          picture: picture,
+                          form_id: form_id,
+                          canvas_logo_placement: canvas_logo_placement,
+                          default_placement: default_placement,
+                          account_meta:account_meta,
+                        -%}
+                      {%- endif -%}
+                    {%- endif -%}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endif %}  
+
+{% if is_mockup_enabled %}
+  {% if logo_product_option != blank %} 
+    {%- for logo_data in logo_product_option -%}
+      {%- liquid
+        assign canvas_logo_placement = logo_data.canvas.value | split: '_'
+        if canvas_logo_placement == blank
+          assign canvas_logo_placement = "0_0_2048_2048" | split: '_'
+        endif 
+        assign personalization_canvas_logo_placement = logo_data.personalization_canvas.value | split: '_'
+        assign default_placement = logo_data.default_placement.value | split: '_'
+        assign location = logo_data.location | replace: " ", "_" 
+        assign suffix_tmp = logo_data.location | replace: " ", "_" 
+        assign name = logo_data.name
+        assign picture = logo_data.picture
+        assign product = logo_data.product
+        assign svg_instructions = logo_data.svg_instructions
+        assign fontsize_meta = logo_data.personalization_sizes
+        assign fontfamily_meta = logo_data.personalization_fonts.value
+        assign assigned_personalization_thread = logo_data.assigned_personalization_thread.value 
+        assign logo_data_forloop_index = forloop.index
+        assign suffix_section_id_tmp = section.id | append: suffix
+      -%}
+      <div class="custom_logo_customization_location_popups_{{ location }}">
+        {%- for logo in logos -%}
+          {%- liquid
+            assign suffix_section_id = suffix_section_id_tmp | append: logo
+            assign suffix = suffix_tmp | append: '_' | append: logo
+          -%}
+          <style> 
+              #shopify-section-{{ suffix_section_id }} { background-color:#ffffff; }
+              .section-{{ suffix_section_id }} * { font-size: calc(var(--font-size) * 0.9); }
+              @media screen and (min-width: 989px) {
+                .custom_logo_customization_popup_data { padding: 0 var(--px-desktop, 5rem); padding-top: var(--pt-desktop); padding-bottom: var(--pb-desktop); font-size: var(--font-size); }
+                .section-{{ suffix_section_id }} * { font-size: var(--font-size); }
+              }
+              .grid-{{ suffix_section_id }} { display: grid; gap: 35px; align-items: flex-start; }
+              @media (min-width: 750px) {
+                .grid-{{ suffix_section_id }} { grid-template-columns: minmax(0, 60%) minmax(0, 40%); gap: 30px; }
+              }
+              .answer-{{ suffix_section_id }} { padding: 10px 0 30px; transition: all 0.3s ease-in-out; overflow: hidden; }
+              .answer-{{ suffix_section_id }} p { margin-top: 0; }
+              .answer-{{ suffix_section_id }} p:last-child { margin-bottom: 0; }
+              .button-{{ suffix_section_id }} { cursor: pointer; background: transparent; width: 100%; border: none; display: flex; align-items: center; padding: 0; position: relative; padding: 22px 25px 19px 0px; }
+              @media (min-width: 750px) {
+                .button-{{ suffix_section_id }} { padding: 22px 25px 19px 0px;}
+              }
+              .button-{{ suffix_section_id }}:focus { outline: none; }
+              .faq-{{ suffix_section_id }} { border-top: 1px solid var(--border-color); }
+              .faq-{{ suffix_section_id }}:last-child, .faq-{{ suffix_section_id }}:nth-last-child(2) { border-bottom: 1px solid var(--border-color); }
+              .faq-answer-height-cal-{{ suffix_section_id }} { visibility: hidden; opacity: 0; pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; }
+              
+          </style>
+      
+          <div id="custom_logo_customization_popup_{{ suffix }}" class="custom_logo_customization_popup">
+            <div
+              class="section-{{ suffix_section_id }} section-{{ suffix_section_id }}-padding custom_logo_customization_popup_data"
+              style=" --max-width: 120rem; --pt: {{ 36 | times: 0.75 | round: 0 }}px; --pt-desktop: 36px; --pb: {{ 36 | times: 0.75 | round: 0 }}px; --pb-desktop: 36px; --px: 1.5rem; --px-desktop: 5rem; --mt: 0px; --mb: 0px;">
+              
+              <div class="popup_close_save">
+                {% if section.settings.popup_disclaimer_display and section.settings.popup_disclaimer_text != blank %} 
+                  <div class="customization_popup_disclaimer">
+                    {{ section.settings.popup_disclaimer_text }}
+                  </div>
+                {% endif %}
+                <div class="button_block">
+                  {% comment %}{% if personalization_notes %}{% endcomment %}
+                  {% if personalization_editing contains 'Note' %}
+                    <button type="button" class="custom_logo_customization_popup_scroll" data-scroll-id="location_note_{{ suffix }}" data-suffix="{{ suffix }}" data-location-suffix="{{ location }}" >Add Note</button>
+                    {% comment %}<a href="#location_note_main_{{ suffix }}" >Add Note</a>{% endcomment %}
+                  {% endif %}
+                  {% comment %}{% endif %}{% endcomment %}
+                  <a class="custom_logo_customization_popup_reset" data-suffix="{{ suffix }}" data-location-suffix="{{ location }}" href="#">Reset</a>
+                  <a class="custom_logo_customization_popup_close" data-suffix="{{ suffix }}" data-location-suffix="{{ location }}" href="#meta_logo_custom_index_section_{{ location }}">Save</a>
+                  <a class="custom_logo_customization_popup_close close_btn" btn-type="close" data-suffix="{{ suffix }}" data-location-suffix="{{ location }}" href="#meta_logo_custom_index_section_{{ location }}" >&times;</a>
+                </div>
+              </div>
+              <div class="grid grid-{{ suffix_section_id }} main-tab-container"> 
+                <div class="tab-container tab-container-sticky">
+                  <ul class="tabs">
+                    <li rel="tab1_content_customization_{{ suffix }}" class="active"> Mockup </li>
+                    <li rel="tab2_content_customization_{{ suffix }}"> Logo </li>
+                  </ul>
+                  <div class="tab_container">
+                    <!-- #tab1 -->
+                    <div id="tab1_content_customization_{{ suffix }}" class="tab_content" style="display: -webkit-box;">
+                      <div class="grid__item  product-single__sticky logo_customization_images">
+                        <div data-product-images
+                          data-has-slideshow="{% if product.media.size > 1 %}true{% else %}false{% endif %}">
+                          <div class="product__photos product__photos-{{ suffix_section_id }} product__photos--below">
+                            <div class="product__main-photos_{{ suffix }}" data-aos data-product-single-media-group>
+                              <div data-product-photos class="product-slideshow" id="ProductPhotos-{{ suffix_section_id }}">
+                                <div class="" id="ImageSection-Popup-{{ location }}-logos">
+                                  {%- render 'product-image-element', img: picture, type: 'photoswipe', classes: '', canvas_logo_placement:canvas_logo_placement,personalization_canvas_logo_placement:personalization_canvas_logo_placement, default_placement:default_placement, isPersonalize: true, alt: picture.alt | escape | split: '#' | first, widths: '360, 540, 720, 900, 1080', product_zoom_size: '', loopIndex: loopIndex, media: picture, suffix:suffix, media_width: '2048', media_height: '2048', sizes: '', sizeVariable: '', fallback: fallback, loading: loading, svg_instructions:svg_instructions, media_variant: current_variant -%}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- #tab2 -->
+                    <div id="tab2_content_customization_{{ suffix }}" class="tab_content" style="display: -webkit-box;">
+                      <div id="logo_content_customization_view_{{ suffix }}"
+                        class="logo_customization_view_{{ suffix }} logo_customization_view_{{ location }}" display-type="Popup"
+                        style="margin: 0 auto;">
+                        <div class="logo_customization_svg logo-image-svg" data-variant-logo="{{ current_variant.id }}"></div>
+                        <div class="logo_customization_svg_text logo-image-svg-text" data-variant-logo="{{ current_variant.id }}"
+                          style="word-wrap: break-word; text-align: center;"></div>
+                      </div>
+                    </div>
+                  </div>
+                  {% comment %}{% if personalization_notes %} {% endcomment %}
+                  {% if personalization_editing contains 'Note' %}
+                    <div class="grid grid--small customization-notes">
+                      <div class="grid__item  small--one-whole">
+                        <textarea type="text" value="" name="properties[_location{{ logo_data_forloop_index }}Note]"
+                          id="location_note_{{ suffix }}" class="input-full location_note_{{ location }}"
+                          data-variant-logo="{{ current_variant.id }}" data-suffix="{{ suffix }}" placeholder="Decoration Notes"></textarea>
+                      </div>
+                    </div>
+                  {% endif %}
+                  {% comment %}{% endif %}{% endcomment %}
+                </div>
+          
+                <div class="tab-container">
+                  <ul class="tabs">
+                    {% unless logo == 'ONLYPERSONALIZATION' %}
+                    <li class="active tab_customization_btn" rel="tab1_customization_{{ suffix }}"
+                      id="tab1_customization_btn_{{ suffix }}" data-variant-logo="{{ current_variant.id }}"
+                      data-suffix="{{ suffix }}" tab-val="Logo" data-location-suffix="{{ location }}">
+                      Customize
+                    </li>
+                    {% endunless %}
+                    <li class="{% if logo == "ONLYPERSONALIZATION" %} active {% endif %} tab_customization_btn"
+                      rel="tab2_customization_{{ suffix }}" id="tab2_customization_btn_{{ suffix }}"
+                      data-variant-logo="{{ current_variant.id }}" data-suffix="{{ suffix }}" tab-val="Personalize"
+                      data-location-suffix="{{ location }}"
+                      style="{% if logo_viewing == "Logo Location" %}{% unless logo_editing contains "Include Personalization" or logo == 'ONLYPERSONALIZATION' %}display:none;{% endunless %}{% endif %}"
+                      >
+                      Personalize
+                    </li>
+                  </ul>
+                  <div class="tab_container">
+                    <!-- #tab1 -->
+                    {% unless logo == 'ONLYPERSONALIZATION' %}
+                    <div id="tab1_customization_{{ suffix }}" class="tab_content">
+                      <div style="position: relative;" id="logo_customization_{{ suffix }}">
+                        <div id="" class="spinner loading-bar-spinner">
+                          <div class="spinner-icon"></div>
+                        </div>
+                      </div>
+                    </div>
+                    {% endunless %}
+                    <!-- #tab2 -->
+                    <div id="tab2_customization_{{ suffix }}" class="tab_content" data-x="{{ default_placement[0] }}"
+                      data-y="{{ default_placement[1] }}" data-width="{{ default_placement[2] }}"
+                      data-height="{{ default_placement[3] }}" canvas-x="{{ canvas_logo_placement[0] }}"
+                      canvas-y="{{canvas_logo_placement[1]}}" canvas-width="{{canvas_logo_placement[2]}}"
+                      canvas-height="{{canvas_logo_placement[3]}}"
+                      style="{% if logo_viewing == "Logo Location" %}{% unless logo_editing contains "Include Personalization" or logo == 'ONLYPERSONALIZATION' %}display:none;{% endunless %}{% endif %}"
+                      >
+                      <div class="grid grid--small" style="margin-bottom: 8px;">
+                        <div class="grid__item  small--one-whole">
+                          <textarea type="text" value="" id="input_personalize_text_{{ suffix }}"
+                            class="input-full input-personalize-text" data-variant-logo="{{ current_variant.id }}"
+                            data-suffix="{{ suffix }}" data-location-suffix="{{ location }}" rows="2" cols="10"
+                            placeholder="Personalization"></textarea>
+                          <p id="error-message" style="color: red; display: none;">Maximum 10 characters per line and 2 lines
+                            allowed.</p>
+                        </div>
+                      </div>
+                      <div class="grid grid--small" style="margin-bottom: 8px; {% unless personalization_editing contains 'Alignment' %}display:none;{% endunless %}">
+                        <div class="grid__item  small--one-whole">
+                          <select id="input_personalize_font_position_{{ suffix }}" class="input_personalize_font_position"
+                            data-location-suffix="{{ location }}" data-suffix="{{ suffix }}"
+                            data-variant-logo="{{ current_variant.id }}">
+                            {% comment %}
+                            <option value="left">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="right">Right</option>
+                            {% endcomment %}
+                            <option value="right">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="left">Right</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="grid grid--small" style="margin-bottom: 8px; {% unless personalization_editing contains 'Font' %}display:none;{% endunless %}">
+                        <div class="grid__item  small--one-whole">
+                          <select id="input_personalize_font_{{ suffix }}" class="input_personalize_font"
+                            data-location-suffix="{{ location }}" data-suffix="{{ suffix }}"
+                            data-variant-logo="{{ current_variant.id }}">
+                            {% if fontfamily_meta != blank %}
+                              {% for family in fontfamily_meta %}
+                              <option value="{{ family | handleize }}" {% if forloop.index == 1 %} selected="selected" {% endif %} >{{ family }}</option>
+                              {% endfor %}
+                            {% else %}
+                              <option value="Arial">Arial</option>
+                              <option value="Helvetica" selected >Helvetica</option>
+                              <option value="Myriad Pro">Myriad Pro</option>
+                              <option value="Delicious">Delicious</option>
+                              <option value="Verdana">Verdana</option>
+                              <option value="Georgia">Georgia</option>
+                              <option value="Courier">Courier</option>
+                              <option value="Comic Sans MS">Comic Sans MS</option>
+                              <option value="Impact">Impact</option>
+                              <option value="Monaco">Monaco</option>
+                              <option value="Optima">Optima</option>
+                              <option value="Hoefler Text">Hoefler Text</option>
+                              <option value="Plaster">Plaster</option>
+                              <option value="Engagement">Engagement</option>
+                            {% endif %}
+                          </select>
+                        </div>
+                      </div>
+          
+                      <div class="grid grid--small" style="margin-bottom: 8px; {% unless personalization_editing contains 'Size' %}display:none;{% endunless %}">
+                        <div class="grid__item  small--one-whole">
+                          <select id="input_personalize_font_size_{{ suffix }}" class="input_personalize_font_size"
+                            data-location-suffix="{{ location }}" data-suffix="{{ suffix }}"
+                            data-variant-logo="{{ current_variant.id }}">
+                            {% if fontsize_meta != blank %}
+                              {% assign font_size = fontsize_meta | split: '_' %}
+                              {% for font_size_final in font_size %}
+                              {% assign font = font_size_final | split: '=' %}
+                              <option value="{{ font[1] }}" {% if forloop.first == 1 %} selected {% endif %}>
+                                {{ font[0] }}
+                              </option>
+                              {% endfor %}
+                            {% else %}
+                              {% for i in (8..60) %}
+                              <option value="{{ i }}" {% if i == 30 %} selected {% endif %}>
+                                {{ i }}
+                              </option>
+                              {% endfor %}
+                            {% endif %}
+                          </select>
+                        </div>
+                      </div> 
+                      <div style="position: relative;" class="personalize_customization_use_assigned" id="personalize_customization_{{ suffix }}" use-assigned-thread="{{ personalization_use_assigned_thread }}" assigned-thread="{{ assigned_personalization_thread.hex }}"  ></div>
+                    </div>
+                  </div>
+          
+                  <div style="position: relative; display:none;" id="logo_customization_clone_{{ suffix }}" data-section-id="{{ suffix_section_id }}">
+                    <div class="faq-{{ suffix_section_id }}" style="--border-color: #f2f2f2;">
+                      <div class="faqHeading button-{{ suffix_section_id }}" style="color: #1f2d54; --font-size: 20px; "> 
+                        <div id="logo_customization_image_{{ suffix }}_{~i~}"></div>
+                        <div id="logo_customization_title_{{ suffix }}_{~i~}">Layers</div>
+                        <input type="hidden" class="thread_colors_properties_input" id="thread_colors_properties_{{ suffix }}_{~i~}" name="_thread_colors_{{ suffix }}_{~i~}" value>
+                        {% render 'meta-logo-collapsible-icons' , suffix_section_id:suffix_section_id %}
+                      </div>
+                      <div class="logoCustom answer-{{ suffix_section_id }}" style="display: none; height: 0; padding-top: 0; padding-bottom: 0; overflow: auto; padding-left: 40px; --font-size: 14px; color: #1f2d54;" id="logo_customization_thread_colors_{{ suffix }}_{~i~}" data-index="{~index~}">
+                        <div class="grid grid--small" style="margin-bottom: 8px;">
+                          <div class="grid__item  small--one-whole layerSearch">
+                            <input onkeydown="return (event.keyCode!=13);" type="text" value="" class="input-full input-thread-colors-search"
+                              thread_colors_layer_id="{{ suffix }}-{~i~}" placeholder="Search Thread Colors"><button type="button"
+                              class="btn btn--small input-thread-colors-search">Search</button>
+                            <button type="button" class="btn btn--small input-thread-colors-search-clear">Clear</button>
+                          </div>
+                        </div>
+                        {% if thread_colors != blank %}
+                          <div id="loading-bar-spinner" class="spinner">
+                            <div class="spinner-icon"></div>
+                          </div>
+                          {% paginate thread_colors by 3000 %}
+                            <div class="product-grid" data-text="{~i~}"> 
+                              {% for color in thread_colors %}
+                                {% if color.name != blank and color.thread_code != blank %}
+                                  {% assign color_hex_code_only = color.hex | replace: "#", "" %}
+                                  <div class="main_color_thread input-color thread-colors-search-elememt-{{ suffix }}-{~i~} thread_colors_{{ suffix }}_{~i~}_{{ color_hex_code_only }}"
+                                    thread-colors-title="{{ color.name }} ({{ color.thread_code }})">
+                                    <label for="input-thread-colors-{{ suffix }}-{~i~}-{{ forloop.index }}">
+                                      <div style="display: flex; align-items: center;"
+                                        class="thread_inner_main thread_colors_update_{{ suffix }}_{~i~}">
+                                        <input type="radio" class="thread_colors_update" data-suffix="{{ suffix }}"
+                                          data-location-suffix="{{ location }}" value="{{ color.hex }}"
+                                          name="thread_colors_{{ suffix }}[{~i~}]" thread_colors_layer_id="{~i~}"
+                                          data-variant-logo="{{ current_variant.id }}"
+                                          thread_colors_title_code="{{ color.name }} ({{ color.thread_code }})"
+                                          thread_colors_title="{{ color.name }}" thread_colors_code="{{ color.thread_code }}"
+                                          id="input-thread-colors-{{ suffix }}-{~i~}-{{ forloop.index }}">
+                                        <div class="threadCon threadCon_{{ color_hex_code_only }}-{~i~}" data-text="{~i~}"></div> 
+                                      </div>
+                                    </label>
+                                  </div>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                            <div class="pagination_layer pagination"></div>
+                          {% endpaginate %}
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+      
+  {% endif %}
+{% endif %}
+</div>
+{% schema %}
+{
+  "name": "Meta Logo Personalized",
+  "max_blocks": 3,
+  "settings": [
+    {
+      "type": "select",
+      "id": "meta_logo_view",
+      "label": "Meta Logo View",
+      "default": "Grid",
+      "options": [
+        {
+          "value": "List",
+          "label": "List"
+        },
+        {
+          "value": "Grid",
+          "label": "Grid"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Customize Popup Disclaimer"
+    },
+    {
+      "type": "checkbox",
+      "id": "popup_disclaimer_display",
+      "label": "Display Disclaimer text",
+      "default": false
+    },
+    {
+      "type": "richtext",
+      "id": "popup_disclaimer_text",
+      "label": "Disclaimer Text"
+    }
+  ],
+  "blocks": [
+
+  ],
+  "presets": [
+    {
+      "name": "Meta Logo Personalized"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,91 @@
+<div>
+  {%- capture contentForQuerystring -%}{{ content_for_header }}{%- endcapture -%}
+  {%- assign pageUrl = contentForQuerystring
+    | split: '"pageurl":"'
+    | last
+    | split: '"'
+    | first
+    | split: '.myshopify.com'
+    | last
+    | replace: '\/', '/'
+    | replace: '%20', ' '
+    | replace: '\u0026', '&'
+  -%}
+  {% capture finalurl %}https://{{ pageUrl }}{% endcapture %}
+  {%- liquid
+    assign query_string = finalurl | split: '?' | last
+    assign splitText = query_string | split: '&'
+    assign keyArr = ''
+    assign valArr = ''
+    assign search = ''
+    for obj in splitText
+      assign key = obj | split: '=' | first
+      assign value = obj | split: '=' | last
+      assign keyArr = keyArr | append: ',' | append: key
+      assign valArr = valArr | append: ',' | append: value
+    endfor
+
+    assign keyArr = keyArr | remove_first: ',' | split: ','
+    assign valArr = valArr | remove_first: ',' | split: ','
+
+    for obj in splitText
+      if keyArr[forloop.index0] == 'search'
+        assign search = valArr[forloop.index0]
+      endif
+    endfor
+  -%}
+</div>
+<div style="display:;">search = {{ search }}</div>
+{% assign thread_colors = shop.metaobjects.thread_colors.values %}
+{% if thread_colors != blank %}
+  <div class="thread_clone_color" data-count="{{ thread_colors.count | minus: 1 }}">
+    {% if search != blank %}
+      {% assign pageLimit = 3000 %}
+    {% else %}
+      {% assign pageLimit = 10 %}
+    {% endif %}
+    {% paginate thread_colors by pageLimit %}
+      <div class="thread-colors-container">
+        {% for color in thread_colors %}
+          {% if color.name != blank and color.thread_code != blank %}
+            {% assign found = 0 %}
+            {% if search != blank %}
+              {% assign searchWord = search | downcase | strip | append: '' %}
+              {% assign colorName = color.name | downcase %}
+              {% assign codeName = color.thread_code | downcase %}
+              {% if colorName contains searchWord
+                or colorName == searchWord
+                or codeName contains searchWord
+                or codeName == searchWord
+              %}
+                {% assign found = 1 %}
+              {% endif %}
+            {% else %}
+              {% assign found = 1 %}
+            {% endif %}
+            {% if found == 1 %}
+              <div class="color_main_thread">
+                <div
+                  class="logo_customization_thread_cone_img"
+                  data-thread-cone-code="{{ color.hex }}"
+                >
+                  <svg
+                    viewBox="0 0 750 750"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g id="thread_color" fill="{{ color.hex }}" ><path d="M260.02,645.64c-8.69-3.08-17.93-7.75-21.09-17.18-2.14-6.38.39-18.39.83-25.49,3.92-63.36,8.99-126.63,12.36-190,4.93-92.79,8.08-185.57,13.62-278.25.45-7.49-.57-22.47,2.44-28.69,2.46-5.09,5.68-5.39,10.84-6.02,27.6-3.37,64.74-.6,93.42-.63,31.28-.03,69.15-2.43,99.85.63,13.64,1.36,10.71,18.32,11.33,28.23,7.47,119.4,10.5,238.66,18.19,357.99,3,46.55,7.15,92.92,9.74,139.47-5.6,19.29-29.7,22.47-46.66,25.69"></path></g><g id="Shadow"><image xlink:href="https://cdn.shopify.com/s/files/1/0819/3910/4058/files/thared_bottom_cone_Image.png?v=1735737196" transform="translate(282.58 651.95) scale(.65)" height="73" width="285" id="bottom_cone_Image"></image><image xlink:href="https://cdn.shopify.com/s/files/1/0819/3910/4058/files/thared_top_cone_Image.png?v=1735737196" transform="translate(314.36 50.7) scale(.65)" height="75" width="187" id="top_cone_Image"></image><image style="mix-blend-mode: multiply;" xlink:href="https://cdn.shopify.com/s/files/1/0819/3910/4058/files/thared_Shadow_Image.png?v=1735737197" transform="translate(237.17 50.7) scale(.65)" height="1000" width="425"  id="Shadow_Image"></image></g>
+                  </svg>
+                </div>
+                <span class="thread_colors_title_code"> {{ color.name }} ({{ color.thread_code }}) </span>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        <div class="pagination">
+          {{- paginate | default_pagination -}}
+        </div>
+      </div>
+    {% endpaginate %}
+  </div>
+{% endif %}

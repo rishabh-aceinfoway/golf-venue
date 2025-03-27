@@ -1,0 +1,24 @@
+{% comment %}
+  We will need to add type in the customer account metafield where we can identify how the customer will log in.
+  Using :-  Url or domain or tags
+{% endcomment %}
+
+{%- assign shopDomain = request.host -%}
+{%- if customer -%}
+  {%- if customer.metafields.account.account_handle.size > 0 -%}
+    {%- assign shopDomain = customer.metafields.account.account_handle -%}
+  {%- endif -%}
+
+  {%- if customer.tags.size > 0 -%}
+    {%- for tag in customer.tags -%}
+      {%- if tag contains 'EXP:' -%}
+        {%- assign shopDomain = tag | split: ':' | last -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- liquid
+  assign domain_handle = shopDomain | handleize 
+  assign account_meta = shop.metaobjects.account[domain_handle]   
+-%}

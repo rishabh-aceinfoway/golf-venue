@@ -1,0 +1,358 @@
+{% comment %}
+  Image element snippet
+  - Builds out our theme images
+    - Parameters:
+     - img (Required - Image object)
+     - classes (Optional - String)
+     - alt (Optional - String)
+     - loading (Optional - String)
+     - img_height (Optional - String)
+     - img_width (Optional - String)
+     - sizes (Optional - String)
+     - widths (Optional - String)
+     - preload (Optional - Boolean)
+     - itemprop (Optional - String)
+     - format (Optional - String)
+     - role (Optional - String)
+     - aria-hidden (Optional - Boolean)
+     - style (Optional - String)
+  - Builds out image tags for hosted files
+    - Parameters:
+      - asset (Required - String url)
+      - host (Optional - String), default is Shopify
+      - type (Required - String)
+      - classes (Optional - String)
+      - alt (Optional - String)
+      - widths (Optional - String)
+      - data-name (Optional - String)
+      - data-value (Optional - String)
+      - width (Optional - Number)
+      - height (Optional - Number)
+  - Builds out images that connect into Photoswipe
+    - Parameters:
+      - img (Required - Media preview image)
+      - media_variant (Required - Variant object)
+      - logo (Optional - String)
+      - type (Required - String)
+      - product_zoom_size (Required - String)
+      - loopIndex (Required - String)
+      - media_height (Required - String)
+      - media_width (Required - String)
+      - media (Required - Media object)
+      - classes (Optional - String)
+      - alt (Optional - String)
+      - widths (Optional - String)
+
+  https://shopify.dev/api/liquid/filters#image_tag
+  https://shopify.dev/api/liquid/filters#image_url
+{% endcomment %}
+{%- liquid
+    assign logo_viewing = account_meta.logo_viewing.value 
+    assign course_code = account_meta.course_code.value 
+    assign logo_order = media_variant.product.metafields.logo.links.value
+    assign logos = account_meta[logo_order].value
+    assign customer_logo_type = account_meta.logo_type.value
+   
+    assign logo = logo | default: logos.first
+    assign logo_colorway = media_variant.metafields.logo.colorway
+    if default_placement != blank and customer_logo_type == 'svg'
+      assign logo_x = default_placement[0]
+      assign logo_y = default_placement[1]
+      assign logo_w = default_placement[2]
+      assign logo_h = default_placement[3]
+    else
+      assign logo_x = media_variant.metafields.logo.x_coordinate
+      assign logo_y = media_variant.metafields.logo.y_coordinate
+      assign logo_w = media_variant.metafields.logo.width
+      assign logo_h = media_variant.metafields.logo.height
+    endif
+    
+    if canvas_logo_placement == blank 
+      assign canvas_logo_placement = media_variant.metafields.logo.canvas.value | split: "_"
+    endif
+    
+    if collection.handle != 'all'
+        assign img_resize_percentage = 1
+    else
+        assign img_resize_percentage = 4
+    endif
+-%}
+
+{% liquid
+  assign classes = classes | escape
+  assign alt = alt | escape
+
+  # Image Loading https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/loading#value
+    # Lazyloading or eager
+    # Eager is the default loading behavior of the browser, which is the same as not including the attribute and means the image is loaded as soon as possible
+    # We are setting it explicitly here but there are no performance benefits
+
+  if loading == 'eager'
+    assign loading = 'eager'
+  elsif loading == false
+    assign loading = 'eager'
+    assign preload = true
+  else
+    assign loading = 'lazy'
+    assign preload = false
+  endif
+
+  # Image sizes https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/sizes
+   # Can explicitly pass in sizes. For example: sizes: '200px' or '(min-width: 769px) 400px, 30vw'
+   # Can pass in only a sizeVariable
+    # This can represent a setting like products per row which means each grid item has a width that can vary
+    # Can pass in an explicit value
+   # Can also pass in an optional fallback size which is only used when the first condition passed to sizes is not true.
+   # If sizes and sizeVariable is blank we output a default value for sizes which is 100vw
+  if sizes == blank and sizeVariable != blank
+    capture sizes
+      render 'sizes-explicit', sizeVariable: sizeVariable, fallback: fallback
+    endcapture
+  endif
+
+  if sizes == blank
+    assign sizes = '100vw'
+  else
+    assign sizes = sizes
+  endif
+
+  if alt == blank
+    assign alt = img.alt | default: ''
+  endif
+
+  if animation == blank
+    assign animation = 'image-fade-in'
+  else
+    assign animation = animation
+  endif
+
+  # Add a class to the image so we can target theme images
+  assign classes = classes | append: ' image-element'
+%}
+<div class="inner_thumb">
+{%- assign default_svg_colors = "#1e4287,#2ed8c4,#3e6c45,#4ef5aa,#5e2d5a" | split: ',' -%} 
+<div style="display:none;"> 
+  {% for svg_color in svg_thread_instructions %}  
+    <input
+      type="color"
+      class="layer_bgpickers layer_bgpickers-{{ media_variant.id }}" 
+      data-logo-variant-id="{{ current_variant.id }}"
+      logo-layer-class="cls-{{ forloop.index }}" 
+      logo-layer-id="layer_{{ forloop.index }}"
+      default-svg-colors="#{{ forloop.index }}e{{ forloop.index }}e{{ forloop.index }}e"
+      default-svg-colors-arr="{{ default_svg_colors[forloop.index0] }}"
+      pattern="^#+([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$"
+      logo-thread-title="{{ svg_color.name }}"
+      logo-thread-code="{{ svg_color.thread_code }}"
+      value="{{ svg_color.hex }}"
+    >
+  {% endfor %}
+</div>
+{% assign img_height_width = 2048 | divided_by: img_resize_percentage  %}
+<image-element data-aos="{{ animation }}" data-aos-offset="150" class="{{ full_image_class }}"   >
+{% if type == blank %}
+  {% if widths != blank %}
+    {% if img_width == blank %}
+      {% assign img_width = widths | split: ',' | last %}
+    {% endif %}
+    <svg   
+    viewBox="0 0 {{ img_height_width }} {{ img_height_width }}" 
+    class="{{ classes }}"
+    loading="{{ loading }}"    
+    >    
+      <image x="0" y="0" xlink:href="{{ img | image_url: width: img_height_width , height: img_height_width }}"/>
+      {% if customer_logo_type == 'svg'  %}
+        adads
+        {% if properties != blank or page_type == 'CartDrawer' %}
+          <g class="logo-image-cart-svg-base64" 
+            data-variant-logo="{{ media_variant.id }}" 
+            data-x="{{ properties._personalize_x }}" data-y="{{properties._personalize_y}}" 
+            data-width="{{ properties._personalize_width }}" data-height="{{ properties._personalize_height }}" 
+            data-logo-base64="{{ properties._logo_base64 }}"
+            data-logo-image-template="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url-svg', course_code: course_code, logo: logo -%}{% else %}{%- render 'product-image-url-svg', course_code: course_code, logo: logo -%}{% endif %}" > 
+          </g>
+        {% elsif logo_x != blank %}
+          <g class="logo-image-svg" 
+          data-variant-logo="{{ media_variant.id }}" 
+          x="{{logo_x | divided_by: img_resize_percentage}}" y="{{logo_y | divided_by: img_resize_percentage}}" 
+          width="{{logo_w | divided_by: img_resize_percentage}}" height="{{logo_h | divided_by: img_resize_percentage}}" 
+          data-logo-image-template="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url-svg', course_code: course_code, logo: logo -%}{% else %}{%- render 'product-image-url-svg', course_code: course_code, logo: logo -%}{% endif %}" ></g>
+        {% endif %}
+      {% else %}  
+        {%- if logo_colorway -%}
+          <image class="logo-image-png" data-logo-image data-logo-image-template="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url', course_code: course_code, logo: '{{logo}}', colorway: logo_colorway -%}{% else %}{%- render 'product-image-url', course_code: course_code, logo: '{{logo}}', colorway: logo_colorway -%}{% endif %}" x="{{logo_x | divided_by: img_resize_percentage}}" y="{{logo_y | divided_by: img_resize_percentage}}" width="{{logo_w | divided_by: img_resize_percentage}}" height="{{logo_h | divided_by: img_resize_percentage}}" xlink:href="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url', course_code: course_code, logo: logo, colorway: logo_colorway -%}{% else %}{%- render 'product-image-url', course_code: course_code, logo: logo, colorway: logo_colorway -%}{% endif %}"/>    
+        {%- endif -%}
+      {%- endif -%} 
+    </svg>
+    {% comment %}
+    {{ img
+      | image_url: width: img_width, format: format
+      | image_tag: preload: preload,
+                  height: img_height,
+                  width: img_tag_width,
+                  class: classes,
+                  loading: loading,
+                  alt: alt,
+                  sizes: sizes,
+                  widths: widths,
+                  itemprop: itemprop,
+                  role: role,
+                  aria-hidden: ariaHidden,
+                  style: style
+    }}
+    {% endcomment %}
+  {% else %}
+    {% if img_width == blank %}
+      {% assign img_width = img.width | times: 2 | round %}
+    {% endif %}
+    <svg width="100" height="100">
+      <circle cx="50" cy="50" r="40" stroke="black" stroke-width="4" fill="green" />
+    </svg>
+    {% comment %}
+    {{ img
+      | image_url: width: img_width, format: format
+      | image_tag: preload: preload,
+                  height: img_height,
+                  width: img_tag_width,
+                  class: classes,
+                  loading: loading,
+                  alt: alt,
+                  sizes: sizes,
+                  itemprop: itemprop,
+                  role: role,
+                  aria-hidden: ariaHidden,
+                  style: style
+    }}
+    {% endcomment %}
+  {% endif %}
+{% elsif type == 'photoswipe' %}
+  {% if isPersonalize %}
+     <div class="canvas-container-main-data canvas-container-main_{{ suffix }}" data-product-img-url="https:{{ img | image_url: width: 512, height: 512 }}" >
+      <canvas class="canvas-element" id="logo-image-svg-canvas-{{ suffix }}-{{ media_variant.id }}"     
+        data-x="{{ logo_x }}" data-y="{{ logo_y }}" 
+        data-width="{{ logo_w }}" data-height="{{ logo_h }}" 
+        canvas-x="{{ canvas_logo_placement[0] }}" canvas-y="{{canvas_logo_placement[1]}}" 
+        canvas-width="{{canvas_logo_placement[2]}}" canvas-height="{{canvas_logo_placement[3]}}"
+        p-canvas-x="{{ personalization_canvas_logo_placement[0] }}" p-canvas-y="{{personalization_canvas_logo_placement[1]}}" 
+        p-canvas-width="{{personalization_canvas_logo_placement[2]}}" p-canvas-height="{{personalization_canvas_logo_placement[3]}}"
+      ></canvas> 
+    </div>
+  {% else %}
+    {% assign widthsArray = widths | split: ',' %}
+    {%- capture img_widths -%}
+      {% for width in widthsArray %}
+        {{ media | image_url: width: width }} {{ width | append: 'w' }},
+      {% endfor %}
+    {%- endcapture -%}
+    {% assign img_width = widthsArray | last %}
+    <svg     
+      viewBox="0 0 2048 2048" 
+      class="{{ classes }}"
+      loading="{{ loading }}"
+      data-photoswipe-src="{{ img | image_url: width: img_width, format: format }}"
+      data-photoswipe-width="{{ media_width }}"
+      data-photoswipe-height="{{ media_height }}"
+      data-index="{{ loopIndex }}"
+      xmlns="http://www.w3.org/2000/svg"
+      >    
+        <image x="0" y="0" href="https:{{ img | image_url: width: 2048, height: 2048 }}" /> 
+        {% if customer_logo_type == 'svg'  %} 
+          {% if isPersonalize %}
+            <foreignObject width="100%" height="100%" class="drawing-area" >
+              <div class="canvas-container-main canvas-container-main_{{ suffix }}" style="left:{{ canvas_logo_placement[0] }}px; top:{{ canvas_logo_placement[1] }}px; width:{{canvas_logo_placement[2]}}px; height:{{canvas_logo_placement[3]}}px;" >
+                <canvas class="canvas-element" id="logo-image-svg-canvas-{{ suffix }}-{{ media_variant.id }}"  width="2048" height="2048"  
+                  data-x="{{ logo_x }}" data-y="{{ logo_y }}" 
+                  data-width="{{ logo_w }}" data-height="{{ logo_h }}" 
+                  canvas-x="{{ canvas_logo_placement[0] }}" canvas-y="{{canvas_logo_placement[1]}}" 
+                  canvas-width="{{canvas_logo_placement[2]}}" canvas-height="{{canvas_logo_placement[3]}}"
+                ></canvas> 
+              </div>
+            </foreignObject>
+          {% else %}
+            {% if logo_x!=blank %}
+              <g class="logo-image-svg" 
+                {% if isPersonalize %}
+                  id="logo-image-svg-{{ media_variant.id }}"
+                {% endif %}
+                data-variant-logo="{{ media_variant.id }}" 
+                x="{{logo_x}}" y="{{logo_y}}" 
+                width="{{logo_w}}" height="{{logo_h}}" 
+                data-logo-image-template="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url-svg', course_code: course_code, logo: logo -%}{% else %}{%- render 'product-image-url-svg', course_code: course_code, logo: logo -%}{% endif %}" >
+              </g>
+              <g class="logo-image-svg-text"></g> 
+            {% endif %}
+          {% endif %}
+        {% else %}      
+          {%- if logo_colorway -%}
+            <image class="logo-image-png" data-logo-image data-logo-image-template="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url', course_code: course_code, logo: '{{logo}}', colorway: logo_colorway -%}{% else %}{%- render 'product-image-url', course_code: course_code, logo: '{{logo}}', colorway: logo_colorway -%}{% endif %}" x="{{logo_x}}" y="{{logo_y}}" width="{{logo_w}}" height="{{logo_h}}" xlink:href="{% if logo_viewing == "Logo Mockup" %}{%- render 'product-logolocker-image-url', course_code: course_code, logo: logo, colorway: logo_colorway -%}{% else %}{%- render 'product-image-url', course_code: course_code, logo: logo, colorway: logo_colorway -%}{% endif %}"/>    
+          {%- endif -%}
+        {%- endif -%}    
+     </svg>
+    {% comment %}
+      <img src="{{ img | image_url: width: img_width }}"
+        width
+        height
+        class="{{ classes }}"
+        loading="{{ loading }}"
+        alt="{{ alt }}"
+        srcset="{{ img_widths }}"
+        data-photoswipe-src="{{ img | image_url: width: product_zoom_size, format: format }}"
+        data-photoswipe-width="{{ media_width }}"
+        data-photoswipe-height="{{ media_height }}"
+        data-index="{{ loopIndex }}"
+        sizes="{{ sizes }}"
+      >
+    {% endcomment %}
+  {% endif %}
+{% else %}
+  {% if host == 'theme' %}
+    {% assign img_src = asset | asset_url %}
+  {% else %}
+    {% assign img_src = asset | shopify_asset_url %}
+  {% endif %}
+  {%- capture img_widths -%}
+    {% if host == 'theme' %}
+      {{ asset | asset_img_url: '360x' }} 360w,
+      {{ asset | asset_img_url: '540x' }} 540w,
+      {{ asset | asset_img_url: '720x' }} 720w,
+      {{ asset | asset_img_url: '900x' }} 900w,
+      {{ asset | asset_img_url: '1080x' }} 1080w
+    {% endif %}
+  {%- endcapture -%}
+  <svg width="100" height="100">
+    <circle cx="50" cy="50" r="40" stroke="black" stroke-width="4" fill="blue" />
+  </svg>
+  {% comment %}
+  <img src="{{ img_src }}"
+       width="{{ img_width }}"
+       height="{{ img_height }}"
+       class="{{ classes }}"
+       loading="{{ loading }}"
+       alt="{{ alt }}"
+       {% if img_widths != blank %}srcset="{{ img_widths }}"{% endif %}
+       {% if data-name and data-value %}data-{{ data-name }}="{{ data-value }}"{% endif %}
+       sizes="{{ sizes }}"
+  >
+  {% endcomment %}
+{% endif %}
+
+</image-element>
+</div>
+{% comment %}
+
+ - snippet is used for all images across the theme, for hosted assets, and photoswipe
+
+ - collection-grid-item snippet, in some themes the collection list allows for an image upload so we don't need the focal point section setting. But in other themes the collection image or first product image is used and so our existing focal point setting still makes sense to keep because it is value added.
+
+ - using the loading="lazy" attribute, can potentially have a negative performance impact if it is used on images that are already within the browser viewport on load. Therefore it’s advised that you only use it on images lower down on the page.
+
+- using preload: for key images, it may also be useful to prioritise the loading of those images to reduce “layout shift” and display key content to the visitor faster. It’s ideal for the first image on a product page, or a large banner image on the homepage, for example.
+
+  could add section settings for merchants to enable lazyloading/preload for a section if below the fold, by default we disable it for these sections ie. slideshow
+  static sections like collection hero would not be lazyloaded but collection grid would be lazyloaded
+  add info text to that setting to let merchant know it should only be used for section if below the fold otherwise might impact performance
+
+TODO: when we convert image element to a custom HTML element we can add back certain loading styles
+
+{% endcomment %}
+{% comment %}<!-- ymq option done -->{% endcomment %}

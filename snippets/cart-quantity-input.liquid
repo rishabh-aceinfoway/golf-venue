@@ -1,0 +1,48 @@
+{%- comment -%}
+  Cart quantity input
+
+  Accepts:
+  - id: {String} Unique id
+  - value: {String} Quantity value
+  - name: {String} Input name
+  - form_id: {String} Form id
+{%- endcomment -%}
+{%- liquid
+  if value == null
+    assign value = 1
+  endif
+  if name == null
+    assign name = 'quantity'
+  endif
+-%}
+<quantity-input>
+  {% unless cart_item.product_id == 8824556028158 or cart_item.product_id == 8824551899390 or cart_item.product_id == 8824549310718  %}
+    <button minus type="button" aria-label="{{ 'cart.general.reduce_quantity' | t }}">
+      <span aria-hidden="true">&minus;</span>
+    </button>
+  {% endunless %}
+  <input
+    {% if id %}
+      id="{{ id }}"
+    {% endif %}
+    type="number"
+    value="{{- value -}}"
+    min="0"
+    step="1"
+    name="{{- name-}}"
+    autocomplete="off"
+    {% if form_id %}
+      form="{{ form_id }}"
+    {% endif %}
+    data-form-type="other"
+    aria-label="{{ 'cart.label.quantity' | t }}"
+    {% if cart_item.product_id == 8824556028158 or cart_item.product_id == 8824551899390 or cart_item.product_id == 8824549310718  %}
+      readonly
+    {% endif %}
+  >
+  {% unless cart_item.product_id == 8824556028158 or cart_item.product_id == 8824551899390 or cart_item.product_id == 8824549310718  %}
+    <button plus type="button" aria-label="{{ 'cart.general.increase_quantity' | t }}">
+      <span aria-hidden="true">+</span>
+    </button>
+  {% endunless %}
+</quantity-input>

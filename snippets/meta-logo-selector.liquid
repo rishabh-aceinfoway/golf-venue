@@ -1,0 +1,201 @@
+{% comment %}
+  Renders logo selection buttons for a product
+  Parameters:
+  course_code - String - Required
+  logos - String Array - Required
+  current_variant - Object - Required
+  section_id - String - Required
+  product - Object - Required
+  form_id - String - Required
+
+  Color 1: #1e1e1e - svg_instructions_1
+  Color 2: #2e2e2e - svg_instructions_2
+  Color 3: #3e3e3e - svg_instructions_3
+  Color 4: #4e4e4e - svg_instructions_4
+  Color 5: #5e5e5e - svg_instructions_5
+{% endcomment %}
+{%- assign default_svg_colors = '#1e1e1e,#2e2e2e,#3e3e3e,#4e4e4e,#5e5e5e' | split: ',' -%}
+{%  assign default_placement_split = default_placement | split: '_' %}
+{% assign logo_viewing = account_meta.logo_viewing.value %}
+{% assign logo_editing = account_meta.logo_editing.value %}
+<style>
+  .logo-hidden{
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    flex-basis: 25%;
+  }
+  .variant-logo-list {
+      display: flex;
+      overflow: auto;
+      padding: 3px;
+  }
+</style>
+ 
+<div
+  class="variant-wrapper js main-variant-logos-wrapper main_variant_logos_wrapper"
+  data-type="button"
+  id="LogoSection-{{ location }}-logos"
+  {% if logo_data_forloop_index != 1 %}
+    style="display:none;"
+  {% endif %}
+>
+  <label class="variant__label" for="LogoSelect-{{ section_id }}-{{ product.id }}-{{ location }}-logos" {% if only_personalization %} style="display:none;" {% endif %}>
+    {{- location | replace: '_', " " }} Logos
+  </label>
+  <fieldset
+    class="logo-input-wrap"
+    name="logo"
+    id="LogoSelect-{{ section_id }}-{{ product.id }}-{{ location }}-logos"
+  > 
+    
+    <div style="display:none;"> 
+      {% for svg_color in svg_thread_instructions %} 
+        <input
+          type="color"
+          class="bgpickers current_variant_bgpickers bgpickers-{{ current_variant.id }} bg_svg_thread_instructions_{{ location }}"
+          {% comment %}
+          form="{{ form_id }}"
+          name="properties[_color_layer_{{ forloop.index }}]"  
+          {% endcomment %}
+          data-logo-variant-id="{{ current_variant.id }}"
+          style="padding:0"
+          logo-layer-id="layer_{{ forloop.index }}"
+          default-svg-colors="#{{ forloop.index }}e{{ forloop.index }}e{{ forloop.index }}e"
+          default-svg-colors-arr="{{ default_svg_colors[forloop.index0] }}"
+          pattern="^#+([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$"
+          logo-thread-title="{{ svg_color.name }}"
+          logo-thread-code="{{ svg_color.thread_code }}"
+          value="{{ svg_color.hex }}"
+        >
+      {% endfor %}
+    </div>
+    {% assign picture_url = picture | image_url %}
+    {% assign final_image_url = picture_url | split: "?" | first%}
+    <input type="hidden" name="editProductProperties[_product{{ logo_data_forloop_index }}_image]" id="_product_image_edit_{{ location }}" value="https:{{ final_image_url }}">     
+    <input type="hidden" name="editProductProperties[Location {{ logo_data_forloop_index }} Image]" id="full_url_edit_{{ location }}" > 
+    <input type="hidden" name="editProductProperties[Logo {{ logo_data_forloop_index }}]" id="logo_url_edit_{{ location }}" value="">  
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}Code]" id="_logo{{ location }}_code" value="">
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}Coordinates]" id="_logo_edit_{{ location }}_coordinates" value="">
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}RotateAngle]" id="_logo_edit_{{ location }}_rotate_angle" value="">
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}ThreadNames]" id="_logo_edit_{{ location }}_thread_names" value="">
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}ThreadColors]" id="_logo_edit_{{ location }}_thread_colors" value="">
+    <input type="hidden" name="editProductProperties[_logo{{ logo_data_forloop_index }}ThreadCodes]" id="_logo_edit_{{ location }}_thread_codes" value="">
+    
+    <input type="hidden" name="editProductProperties[Personalization {{ logo_data_forloop_index }} Text Image]" id="_personalization_edit_{{ location }}_text_image_url" value=""  >
+    <input type="hidden" name="editProductProperties[Personalization {{ logo_data_forloop_index }}]" id="_personalization_edit_{{ location }}_text" value=""  >
+    <input type="hidden" name="editProductProperties[Personalization {{ logo_data_forloop_index }} Font]" id="_personalization_edit_{{ location }}_font" value="" >
+    <input type="hidden" name="editProductProperties[Personalization {{ logo_data_forloop_index }} Font Size]" id="_personalization_edit_{{ location }}_font_size" value="" >
+    <input type="hidden" name="editProductProperties[Personalization {{ logo_data_forloop_index }} Thread]" id="_personalization_edit_{{ location }}_thread_names" value="" >
+    <input type="hidden" name="editProductProperties[_personalization{{ logo_data_forloop_index }}TextPosition]" id="_personalization_edit_{{ location }}_text_position" value="">
+    <input type="hidden" name="editProductProperties[_personalization{{ logo_data_forloop_index }}ThreadColors]" id="_personalization_edit_{{ location }}_thread_colors" value="" >
+    <input type="hidden" name="editProductProperties[_personalization{{ logo_data_forloop_index }}ThreadCodes]" id="_personalization_edit_{{ location }}_thread_codes" value="" >
+    <input type="hidden" name="editProductProperties[_personalization{{ logo_data_forloop_index }}Coordinates]" id="_personalization_edit_{{ location }}_coordinates" value="" >
+
+    <input type="hidden" form="{{ form_id }}" name="properties[_product{{ logo_data_forloop_index }}_image]" id="_product_image_{{ location }}" value="https:{{ final_image_url }}">     
+    <input type="hidden" form="{{ form_id }}" name="properties[Location {{ logo_data_forloop_index }} Image]" id="full_url_{{ location }}" > 
+    <input type="hidden" form="{{ form_id }}" name="properties[Logo {{ logo_data_forloop_index }}]" id="logo_url_{{ location }}" value="">    
+    <input type="hidden" form="{{ form_id }}" name="properties[_logo{{ logo_data_forloop_index }}Coordinates]" id="_logo_{{ location }}_coordinates" value="{{ default_placement }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[_logo{{ logo_data_forloop_index }}RotateAngle]" id="_logo_{{ location }}_rotate_angle" value="">
+    <input type="hidden" form="{{ form_id }}" name="properties[_logo{{ logo_data_forloop_index }}ThreadNames]" id="_logo_{{ location }}_thread_names" value="">
+    <input type="hidden" form="{{ form_id }}" name="properties[_logo{{ logo_data_forloop_index }}ThreadColors]" id="_logo_{{ location }}_thread_colors" value="">
+    <input type="hidden" form="{{ form_id }}" name="properties[_logo{{ logo_data_forloop_index }}ThreadCodes]" id="_logo_{{ location }}_thread_codes" value="">
+    
+    <input type="hidden" form="{{ form_id }}" name="properties[Personalization {{ logo_data_forloop_index }} Text Image]" id="_personalization_{{ location }}_text_image_url" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[Personalization {{ logo_data_forloop_index }}]" id="_personalization_{{ location }}_text" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[Personalization {{ logo_data_forloop_index }} Font]" id="_personalization_{{ location }}_font" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[Personalization {{ logo_data_forloop_index }} Font Size]" id="_personalization_{{ location }}_font_size" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[Personalization {{ logo_data_forloop_index }} Thread]" id="_personalization_{{ location }}_thread_names" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[_personalization{{ logo_data_forloop_index }}TextPosition]" id="_personalization_{{ location }}_text_position" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[_personalization{{ logo_data_forloop_index }}ThreadColors]" id="_personalization_{{ location }}_thread_colors" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[_personalization{{ logo_data_forloop_index }}ThreadCodes]" id="_personalization_{{ location }}_thread_codes" value="" class="personalization_properties_{{ location }}">
+    <input type="hidden" form="{{ form_id }}" name="properties[_personalization{{ logo_data_forloop_index }}Coordinates]" id="_personalization_{{ location }}_coordinates" value="" class="personalization_properties_{{ location }}">
+    
+    
+    <div class="variant-logo-list">
+      {%- for logo in logos -%}
+        <div
+          class="logo-input"
+          form-id="{{ form_id }}"
+          data-suffix="{{ location }}_{{ logo }}"
+          data-location-suffix="{{ location }}"
+          data-variant-logo="{{ current_variant.id }}"
+          data-variant-logo-code="{{ logo | escape }}"
+          /*style="max-width: none"*/
+        >
+          <div class="logo-inner logo_inner_input_{{ location }}_{{ logo }} logo_inner_input_{{ location }} radio__inputs radio__inputs--swatch"
+              form-id="{{ form_id }}"
+              data-suffix="{{ location }}_{{ logo }}"
+              data-location-suffix="{{ location }}"
+              data-variant-logo="{{ current_variant.id }}"
+              data-variant-logo-code="{{ logo | escape }}"
+            >
+            <input
+              type="radio"
+              {% if logo == logos.first and logo_data_forloop_index == 1 %}
+                checked="checked"
+              {% endif %}
+              form="{{ form_id }}"
+              value="{{ course_code }}.{{ logo }}"
+              name="properties[_logo{{ logo_data_forloop_index }}Code]"
+              data-logo-input
+              class="data_logo_input_{{ location }} product-form__swatch__input u-hidden-visually"
+              data-logo="{{ logo }}" 
+              data-logo-url="{%- render 'product-image-url-svg', course_code: course_code, logo: logo -%}"
+              id="LogoSelect-{{ location }}-{{ section_id }}-{{ current_variant.id }}-logo-{{ logo | escape }}"
+            >
+            <label for="LogoSelect-{{ location }}-{{ section_id }}-{{ current_variant.id }}-logo-{{ logo | escape }}" 
+              class="product-form__swatch__label"
+              {% if only_personalization %} style="display:none;" {% endif %} >
+              <div
+                class="logo-input-svg logo-input-svg-variant-{{ current_variant.id }}"
+                data-suffix="{{ location }}_{{ logo }}"
+                data-location-suffix="{{ location }}"
+                data-variant-logo="{{ current_variant.id }}"
+                data-logo-image-template="{%- render 'product-image-url-svg', course_code: course_code, logo: logo -%}"
+                style="min-height: 96px;"
+              > {% if logo == "ONLYPERSONALIZATION" %} Personalize {% endif %} </div>
+            </label>
+            <div class="action_btn" style="display: flex; {% if logo_viewing == "Logo Location" %}{% unless logo_editing contains "Recolor Logo" %}display:none;{% endunless %}{% endif %}" >
+              <button
+                type="button"
+                data-href="#custom_logo_customization_popup_{{ location }}_{{ logo }}"
+                data-suffix="{{ location }}_{{ logo }}"
+                data-location-suffix="{{ location }}"
+                data-button="Recolor"
+                class="{% if logo != logos.first and logo_data_forloop_index == 1 %} hide {% endif %} btn btn--small custom_logo_customization_popup_btn custom_logo_customization_popup_btn_{{ location }} custom_logo_customization_popup_{{ location }}_{{ logo }}"
+                > {% if only_personalization %} Personalize {% else %} Customize {% endif %} 
+              </button>
+            </div>
+          </div>
+          <div id="logo_customization_view_{{ location }}_{{ logo }}" 
+            class="logo-hidden logo-bottom-box logo-input-customization logo-input-customization-{{ location }} logo_customization_view_{{ location }}_{{ logo }}" 
+            data-suffix="{{ location }}_{{ logo }}" data-location-suffix="{{ location }}" 
+            data-x="{{ default_placement_split[0] }}" data-y="{{ default_placement_split[1] }}" 
+            data-width="{{ default_placement_split[2] }}" data-height="{{ default_placement_split[3] }}"
+            >
+            <div class="logo-input" data-suffix="{{ location }}_{{ logo }}" 
+              style="min-height: 118px; {% if only_personalization %} display:none; {% endif %}"  
+              >
+              <label for="LogoSelect-LogoSelect-Personalize--{{ section_id }}-{{ location }}-{{ logo }}">
+                <div class="logo_customization_svg logo-image-svg" data-variant-logo="{{ current_variant.id }}"></div>
+                <div class="logo_customization_svg_text logo-image-svg-text" data-variant-logo="{{ current_variant.id }}" style="word-wrap: break-word;"></div>
+              </label>
+            </div>
+              <div class="action_btn" /*style="margin-top: 7px;"*/ >
+                <a
+                  href="#custom_logo_customization_popup_{{ location }}_{{ logo }}"
+                  data-suffix="{{ location }}_{{ logo }}"
+                  data-location-suffix="{{ location }}"
+                  class="btn btn--small custom_logo_customization_popup_btn"
+                  data-button="Edit"
+                  style="display: block; max-width: {% if only_personalization %} 162px; {% else %} 100px; {% endif %} "
+                  >{% if only_personalization %} Personalize {% else %} Edit {% endif %} 
+                </a>
+              </div>
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+  </fieldset> 
+</div>

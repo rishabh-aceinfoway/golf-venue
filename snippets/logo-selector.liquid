@@ -1,0 +1,173 @@
+{% comment %}
+    Renders logo selection buttons for a product
+    Parameters:
+    course_code - String - Required
+    logos - String Array - Required
+    current_variant - Object - Required
+    section_id - String - Required
+    product - Object - Required
+    form_id - String - Required
+
+    Color 1: #1e1e1e - svg_instructions_1
+    Color 2: #2e2e2e - svg_instructions_2
+    Color 3: #3e3e3e - svg_instructions_3
+    Color 4: #4e4e4e - svg_instructions_4
+    Color 5: #5e5e5e - svg_instructions_5
+
+{% endcomment %}
+
+{%- liquid 
+  assign logo_type = account_meta.logo_type.value 
+  assign logo_viewing = account_meta.logo_viewing.value
+  assign personalization_logo_mockup = account_meta.personalization_logo_mockup.value | default: false
+-%}
+
+{%- assign default_svg_colors = "#1e1e1e,#2e2e2e,#3e3e3e,#4e4e4e,#5e5e5e" | split: ',' -%}
+{%- assign colorway = current_variant.metafields.logo.colorway -%}  
+<fieldset class="radio__fieldset radio__fieldset product-form__swatch custom_logo_product-form__swatch" name="logo" id="LogoSelect-{{ section_id }}-{{ product.id }}-logos" style="margin-top: 15px;">
+    <!-- <legend class="radio__legend">
+        <span class="radio__legend__label product-form__swatch__title">Logo</span>
+    </legend> -->
+   <div class="product-form__swatch__title">
+    <legend class="f-family--{{ settings.type_product_form_headings_style }} f-caps--{{ settings.type_product_form_headings_capitalize }} f-space--{{ settings.type_product_form_headings_letterspace }}">
+      Logo
+    </legend> 
+  </div>
+
+    <div class="radio__inputs radio__inputs--swatch">   
+        {%- for variant in product.variants %}
+            {%- assign colorway = variant.metafields.logo.colorway -%}
+            {%- assign variant_index = forloop.index -%}
+             {% if logo_type == 'svg'  %} 
+             <div style="display:none;" class="svg_instructions_div" > 
+                {% assign svg_thread_instructions = variant.metafields.logo.svg_instructions.value %} 
+                {% liquid  
+                  if variant.metafields.logo.data.value != blank
+                    assign logo_product_option_svg = variant.metafields.logo.data.value
+                  else 
+                    assign logo_product_option_svg = product.metafields.logo.data.value 
+                  endif
+                        
+                  if logo_product_option_svg != blank
+                   for logo_data in logo_product_option_svg  
+                      assign svg_thread_instructions = logo_data.svg_thread_instructions.value  
+                      break
+                    endfor
+                  endif
+                %}     
+               
+                {%- if svg_thread_instructions-%}
+                {% for svg_color in svg_thread_instructions %} 
+                  {% comment %}
+                  <input type="checkbox" class="bgpickers current_variant_bgpickers bgpickers-{{ variant.id }}" 
+                    form="{{ form_id }}"
+                    name="properties[_color_layer_{{ forloop.index }}]"
+                    data-logo-variant-id="{{ variant.id }}" style="padding:0" 
+                    logo-layer-class="cls-{{ forloop.index }}" 
+                    logo-layer-id="layer_{{ forloop.index }}"
+                    default-svg-colors="{{ default_svg_colors[forloop.index0] }}"
+                    pattern="^#+([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$" value="{{ svg_color }}" 
+                    {% if variant_index == 1 %} checked="checked" {% endif %}
+                    >
+                  {% endcomment %}
+                     <input
+                      type="color"
+                      class="bgpickers current_variant_bgpickers layer_bgpickers-{{ current_variant.id }} bgpickers-{{ current_variant.id }} bg_svg_thread_instructions_{{ location }}"
+                      {% comment %}
+                      form="{{ form_id }}"
+                      name="properties[_color_layer_{{ forloop.index }}]"  
+                      {% endcomment %}
+                      data-logo-variant-id="{{ current_variant.id }}"
+                      style="padding:0"
+                      logo-layer-id="layer_{{ forloop.index }}"
+                      default-svg-colors="#{{ forloop.index }}e{{ forloop.index }}e{{ forloop.index }}e"
+                      default-svg-colors-arr="{{ default_svg_colors[forloop.index0] }}"
+                      pattern="^#+([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$"
+                      logo-thread-title="{{ svg_color.name }}"
+                      logo-thread-code="{{ svg_color.thread_code }}"
+                      value="{{ svg_color.hex }}"
+                    >
+                {% endfor %}
+              {% endif %} 
+              <input type="radio" {% if forloop.index == 1 %} checked="checked" {% endif %} 
+              form="{{ form_id }}" value="" 
+              name="properties[_logo_base64]" id="logo-base64-{{ variant.id }}"  >
+            </div>
+            {% endif %}
+            {%- for logo in logos -%}
+                 <div
+                    class="product-form__swatch__item product-form__swatch__item--button logo_product-form__swatch__item logo_product-form__swatch__item_{{ variant.id }}"
+                    data-variant-logo="{{ variant.id }}" {% if variant.id != current_variant.id %} style="display: none;" {% endif %} 
+                  > 
+                    <input type="radio" 
+                        {% if variant.id == current_variant.id and logo == logos.first %} checked="checked" {% endif %}
+                        class="LogoSelect-{{ variant.id }}-logo-{{ logo | escape }} product-form__swatch__input u-hidden-visually" 
+                        form="{{ form_id }}--" 
+                        value="{{ logo }}" 
+                        name="properties[Logo]" 
+                        data-logo-input data-logo="{{ logo }}" 
+                        data-logo-url="{%- render 'product-image-url', course_code: course_code, logo: logo, colorway: colorway -%}" 
+                        id="LogoSelect-{{ section_id }}-{{ variant.id }}-logo-{{ logo | escape }}"
+                    >
+                    <label for="LogoSelect-{{ section_id }}-{{ variant.id }}-logo-{{ logo | escape }}" class="product-form__swatch__label LogoSelect-{{ section_id }}-{{ variant.id }}-logo-{{ logo | escape }}"  style="height: auto;"  >
+                      {% if logo_type == 'svg' %}  
+                        <div class="logo-image-svg logo-input-svg-variant-{{ variant.id }}" data-variant-logo="{{ variant.id }}" data-size="fixed"
+                          data-logo-image-template="{%- render 'product-logolocker-image-url-svg', course_code: course_code, logo: logo, colorway: colorway -%}">
+                        </div>
+                      {% else %}
+                        {%- if logo contains 'NO' -%}     
+                          <img width="100" src="https://assets.tee.digital/Assets/Random/nologo.png" /> 
+                        {%- else -%}   
+                          <img width="100" src="{%- render 'product-logolocker-image-url', course_code: course_code, logo: logo, colorway: colorway -%}" /> 
+                        {%- endif -%}  
+                      {% endif %}
+                    </label>      
+                </div>
+            {%- endfor -%}
+        {%- endfor -%}
+    </div>
+</fieldset> 
+{% if logo_viewing == "Logo Mockup" %}
+  {% if personalization_logo_mockup %}
+    {% assign logos = "" | append : "ONLYPERSONALIZATION" %}
+    <div class="meta_logo_custom_section_only meta_logo_custom_section_ONLYPERSONALIZATION ">
+      {%- for logo_data in logo_product_option -%}
+        {%- liquid
+          assign canvas_logo_placement = logo_data.canvas.value
+          assign canvas_logo_placement_split = logo_data.canvas.value | split: '_'
+          assign default_placement = logo_data.default_placement.value
+          assign default_placement_split = logo_data.default_placement.value | split: '_'
+          assign location = logo_data.location | replace: ' ', '_'
+          assign name = logo_data.name
+          assign picture = logo_data.picture
+          assign product = logo_data.product
+          assign svg_instructions = logo_data.svg_instructions.value
+          assign svg_thread_instructions = logo_data.svg_thread_instructions.value | sort: "id"
+          assign logo_data_forloop_index = forloop
+          assign section_id = section.id
+        -%}
+    
+        {%- if logos != blank -%}
+          {%- if logos and logos.size > 0 -%}
+            {%- render 'meta-logo-selector',
+              course_code: course_code,
+              svg_instructions: svg_instructions,
+              svg_thread_instructions: svg_thread_instructions,
+              logos: logos,
+              location: location,
+              current_variant: current_variant,
+              product: product,
+              logo_data_forloop_index: logo_data_forloop_index.index,
+              section_id: section_id,
+              picture: picture,
+              form_id: form_id,
+              canvas_logo_placement: canvas_logo_placement,
+              default_placement: default_placement,
+              only_personalization:personalization_logo_mockup
+            -%}
+          {%- endif -%}
+        {%- endif -%} 
+      {% endfor %}
+    </div>
+  {%- endif -%} 
+{% endif %}

@@ -1,0 +1,10 @@
+.logo-input-swatch { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr);padding: 10px 0 20px 0;}
+.logo-input-swatch > span { width: 100%; display: flex; position: relative;}
+.logo-input-swatch > span input[type="radio"] { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }
+.logo-input-swatch > span label { margin: 0 !important; width: 100% !important; height: 100% !important; display: flex !important; border: solid 1px #dcdcdc !important; box-shadow: none !important; outline: none;border-radius: 8px !important; overflow: hidden; transition:all 0.5s ease;}
+.logo-input-swatch > span input[type="radio"]:checked + label { border-color:#000000!important;box-shadow: 0 0 3px 1px #13131333!important; }
+.logo-input-swatch > span label:hover { border-color:#000000!important;box-shadow: 0 0 3px 1px #13131333!important; }
+
+.logo-input-swatch label variant-swatch { width: 100% !important; height: 100% !important; }
+.logo-input-swatch label variant-swatch .logo-input-svg { display: flex; align-items: center; justify-content: center; }
+.logo-input-swatch label variant-swatch .logo-input-svg svg { width: 100%; height: 100%; padding: 10px; }
